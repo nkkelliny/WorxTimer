@@ -1,0 +1,6 @@
+{
+  "appId": "com.yourcompany.usertimerapp",
+  "appName": "User Timer App",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

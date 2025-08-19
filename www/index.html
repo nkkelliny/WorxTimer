@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Timer App</title>
+  <link rel="manifest" href="manifest.json" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+  <style>
+    .page { display: none; }
+.page.active { display: block; }
+
+    #timerDisplay { font-size: 3rem; margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body class="bg-light">
+
+<div id="pinPage" class="container py-5 text-center page active">
+  <h3 class="mb-4">Enter Access PIN</h3>
+  <input type="password" id="accessPin" class="form-control mb-3 w-50 mx-auto" placeholder="Enter PIN" maxlength="6">
+  <div id="pinError" class="text-danger mb-3" style="display: none;">Incorrect PIN. Try again.</div>
+  <button class="btn btn-secondary" onclick="validatePin()" style="width: 50%">Enter</button>
+</div>
+
+  <div id="userPage" class="container py-4 page active">
+    <h4>Users</h4>
+    <div class="d-flex mb-3">
+      <input type="text" id="userSearch" class="form-control me-2" placeholder="Search users..." oninput="renderUsers()">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bi bi-plus-lg"></i></button>
+    </div>
+    <div id="users"></div>
+  </div>
+
+  <div id="eventPage" class="container py-4 page">
+    <h4 id="eventTitle" class="mb-3"></h4>
+    <div class="d-flex mb-3">
+      <button class="btn btn-outline-secondary me-2" style="border: 0;" onclick="goBack()"><i class="bi bi-arrow-left"></i></button>
+      <input type="text" id="eventSearch" class="form-control me-2" placeholder="Search events..." oninput="renderEvents()">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i></button>
+    </div>
+    <div id="events"></div>
+  </div>
+
+  <div id="timerPage" class="container py-4 page text-center">
+    <button class="btn btn-outline-secondary mb-3" style="border: 0;" onclick="switchPage('eventPage')"><i class="bi bi-arrow-left"></i> Back to Events</button>
+    <h2 id="timerEventTitle" class="mb-4"></h2>
+    <div id="timerDisplay">00:00.00</div>
+    <div class="btn-group mb-3">
+      <button class="btn btn-success" onclick="startActiveTimer()"><i class="bi bi-play-fill"></i> Start</button>
+      <button class="btn btn-danger" onclick="stopActiveTimer()"><i class="bi bi-stop-fill"></i> Stop</button>
+      <button class="btn btn-secondary" onclick="resetActiveTimer()"><i class="bi bi-arrow-clockwise"></i> Reset</button>
+    </div>
+    <div>
+      <button class="btn btn-primary" onclick="saveActiveTimer()"><i class="bi bi-save"></i> Save</button>
+    </div>
+  </div>
+
+  <!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addUserModalLabel">Add New User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="username" class="form-control mb-2" placeholder="Name">
+        <input type="text" id="employeeId" class="form-control mb-2" placeholder="Employee ID">
+        <input type="text" id="department" class="form-control mb-2" placeholder="Department">
+        <input type="text" id="manager" class="form-control" placeholder="Manager">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="addUser(); document.querySelector('#addUserModal .btn-close').click();">Add User</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="editUsername" class="form-control mb-2" placeholder="Name">
+        <input type="text" id="editEmployeeId" class="form-control mb-2" placeholder="Employee ID">
+        <input type="text" id="editDepartment" class="form-control mb-2" placeholder="Department">
+        <input type="text" id="editManager" class="form-control" placeholder="Manager">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveUserEdits()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+  <!-- Add Event Modal -->
+  <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addEventModalLabel">Add New Event</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="eventInput" class="form-control" placeholder="Event title">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="addEvent(); document.querySelector('#addEventModal .btn-close').click();">Add Event</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const dbKey = 'pwa-users';
+    let users = JSON.parse(localStorage.getItem(dbKey)) || [];
+    let currentUserIdx = null;
+    let currentEventIdx = null;
+    let activeInterval = null;
+
+    function saveUsers() {
+      localStorage.setItem(dbKey, JSON.stringify(users));
+    }
+
+const appPin = "3030"; // Change this to your desired PIN
+
+function validatePin() {
+  const input = document.getElementById('accessPin').value;
+  if (input === appPin) {
+    document.getElementById('pinPage').classList.remove('active');
+    switchPage('userPage');
+  } else {
+    document.getElementById('pinError').style.display = 'block';
+  }
+}
+
+
+    function switchPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+    }
+
+    function renderUsers() {
+  const container = document.getElementById('users');
+  const search = document.getElementById('userSearch').value.toLowerCase();
+  container.innerHTML = '';
+  users.filter(u => u.name.toLowerCase().includes(search)).forEach((user, idx) => {
+    const div = document.createElement('div');
+    div.className = 'card p-3 mb-3';
+    div.innerHTML = `
+      <h5><i class="bi bi-person-circle me-2"></i>${user.name}</h5>
+      <p class="mb-1"><strong>ID:</strong> ${user.employeeId}</p>
+      <p class="mb-1"><strong>Department:</strong> ${user.department}</p>
+      <p class="mb-1"><strong>Manager:</strong> ${user.manager}</p>
+      <div class="mt-2">
+        <button class="btn btn-outline-primary btn-sm me-2" onclick="viewEvents(${idx})"><i class="bi bi-eye"></i> View</button>
+        <button class="btn btn-outline-secondary btn-sm me-2" onclick="openEditUserModal(${idx})"><i class="bi bi-pencil"></i> Edit</button>
+<button class="btn btn-outline-danger btn-sm" onclick="deleteUser(${idx})"><i class="bi bi-trash"></i> Delete</button>
+
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+
+    function addUser() {
+  const name = document.getElementById('username').value.trim();
+  const employeeId = document.getElementById('employeeId').value.trim();
+  const department = document.getElementById('department').value.trim();
+  const manager = document.getElementById('manager').value.trim();
+
+  if (name && employeeId && department && manager) {
+    users.push({
+      name,
+      employeeId,
+      department,
+      manager,
+      events: []
+    });
+    saveUsers();
+    renderUsers();
+    document.getElementById('username').value = '';
+    document.getElementById('employeeId').value = '';
+    document.getElementById('department').value = '';
+    document.getElementById('manager').value = '';
+  }
+}
+
+let editingUserIdx = null;
+
+function openEditUserModal(idx) {
+  editingUserIdx = idx;
+  const user = users[idx];
+  document.getElementById('editUsername').value = user.name;
+  document.getElementById('editEmployeeId').value = user.employeeId;
+  document.getElementById('editDepartment').value = user.department;
+  document.getElementById('editManager').value = user.manager;
+  const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+  modal.show();
+}
+
+function saveUserEdits() {
+  const name = document.getElementById('editUsername').value.trim();
+  const employeeId = document.getElementById('editEmployeeId').value.trim();
+  const department = document.getElementById('editDepartment').value.trim();
+  const manager = document.getElementById('editManager').value.trim();
+
+  if (name && employeeId && department && manager) {
+    users[editingUserIdx] = {
+      ...users[editingUserIdx],
+      name,
+      employeeId,
+      department,
+      manager
+    };
+    saveUsers();
+    renderUsers();
+    bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+  }
+}
+
+
+
+    function deleteUser(idx) {
+      users.splice(idx, 1);
+      saveUsers();
+      renderUsers();
+    }
+
+    function viewEvents(userIdx) {
+      currentUserIdx = userIdx;
+      document.getElementById('eventTitle').textContent = `${users[userIdx].name}'s Events`;
+      renderEvents();
+      switchPage('eventPage');
+    }
+
+    function goBack() {
+      switchPage('userPage');
+    }
+
+    function addEvent() {
+      const title = document.getElementById('eventInput').value.trim();
+      if (title) {
+        users[currentUserIdx].events.push({ title, elapsed: 0 });
+        saveUsers();
+        renderEvents();
+        document.getElementById('eventInput').value = '';
+      }
+    }
+
+    function renderEvents() {
+      const container = document.getElementById('events');
+      const search = document.getElementById('eventSearch').value.toLowerCase();
+      container.innerHTML = '';
+      users[currentUserIdx].events.filter(e => e.title.toLowerCase().includes(search)).forEach((event, eventIdx) => {
+        const div = document.createElement('div');
+        div.className = 'card p-3 mb-3';
+        div.innerHTML = `
+          <h5><i class="bi bi-stopwatch"></i> ${event.title}</h5>
+          <p class="mb-2">Time: <span id="time-${eventIdx}">${formatTime(event.elapsed)}</span></p>
+          <div class="btn-group" role="group">
+            <button class="btn btn-outline-primary btn-sm" onclick="openTimerPage(${eventIdx})"><i class="bi bi-pencil"></i> Edit Timer</button>
+            <button class="btn btn-outline-danger btn-sm" onclick="deleteEvent(${eventIdx})"><i class="bi bi-trash"></i> Delete</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function deleteEvent(eventIdx) {
+      users[currentUserIdx].events.splice(eventIdx, 1);
+      saveUsers();
+      renderEvents();
+    }
+
+    function openTimerPage(eventIdx) {
+      currentEventIdx = eventIdx;
+      const event = users[currentUserIdx].events[eventIdx];
+      document.getElementById('timerEventTitle').textContent = event.title;
+      document.getElementById('timerDisplay').textContent = formatTime(event.elapsed);
+      switchPage('timerPage');
+    }
+
+    function startActiveTimer() {
+      stopActiveTimer();
+      activeInterval = setInterval(() => {
+        users[currentUserIdx].events[currentEventIdx].elapsed += 10;
+        document.getElementById('timerDisplay').textContent = formatTime(users[currentUserIdx].events[currentEventIdx].elapsed);
+      }, 10);
+    }
+
+    function stopActiveTimer() {
+      clearInterval(activeInterval);
+    }
+
+    function resetActiveTimer() {
+      stopActiveTimer();
+      users[currentUserIdx].events[currentEventIdx].elapsed = 0;
+      document.getElementById('timerDisplay').textContent = formatTime(0);
+    }
+
+    function saveActiveTimer() {
+      saveUsers();
+      renderEvents();
+      switchPage('eventPage');
+    }
+
+    function formatTime(ms) {
+      const mins = Math.floor(ms / 60000).toString().padStart(2, '0');
+      const secs = Math.floor((ms % 60000) / 1000).toString().padStart(2, '0');
+      const millis = Math.floor((ms % 1000) / 10).toString().padStart(2, '0');
+      return `${mins}:${secs}.${millis}`;
+    }
+
+    renderUsers();
+    // Show only the PIN page first
+document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+document.getElementById('pinPage').classList.add('active');
+
+  </script>
+</body>
+</html>
